@@ -1,10 +1,14 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Home Page</title>
+    <title>Speech-to-Text and AI Response</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.min.js"></script>
 </head>
 <body>
-    <h1>Welcome to the Home Page!</h1>
-    <p>This is a simple Flask application.</p>
+    <button id="start-microphone-button">Start Microphone</button>
+    <textarea id="transcription-textbox" readonly></textarea>
+    <textarea id="answer-textbox" readonly></textarea>
+
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

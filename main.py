@@ -1,13 +1,15 @@
 # %%
 # Import the OpenAI library. This library provides a Python interface to the OpenAI API.
+import random
 from openai import OpenAI
-import json
 from flask import Flask, request, render_template
 from flask_socketio import SocketIO, emit
 import uuid
 import json
+import urllib.request
+import urllib.parse
 import websocket
-from websockets_api_example import queue_prompt, get_image, get_images, get_history
+import base64
 
 
 #Setup flask and socketio
@@ -48,10 +50,64 @@ def handle_message(data):
     call_ComfyUI(completion.choices[0].message.content)
 
 
-def call_ComfyUI(prompt):
-    
 
 
+
+
+
+
+def queue_prompt(prompt):
+    p = {"prompt": prompt, "client_id": client_id}
+    data = json.dumps(p).encode('utf-8')
+    req =  urllib.request.Request("http://{}/prompt".format(server_address), data=data)
+    return json.loads(urllib.request.urlopen(req).read())
+
+def get_image(filename, subfolder, folder_type):
+    data = {"filename": filename, "subfolder": subfolder, "type": folder_type}
+    url_values = urllib.parse.urlencode(data)
+    with urllib.request.urlopen("http://{}/view?{}".format(server_address, url_values)) as response:
+        return response.read()
+
+def get_history(prompt_id):
+    with urllib.request.urlopen("http://{}/history/{}".format(server_address, prompt_id)) as response:
+        return json.loads(response.read())
+
+def get_images(ws, prompt):
+    prompt_id = queue_prompt(prompt)['prompt_id']
+    output_images = {}
+    while True:
+        out = ws.recv()
+        if isinstance(out, str):
+            message = json.loads(out)
+            if message['type'] == 'executing':
+                data = message['data']
+                if data['node'] is None and data['prompt_id'] == prompt_id:
+                    break #Execution is done
+        else:
+            continue #previews are binary data
+
+    history = get_history(prompt_id)[prompt_id]
+    for o in history['outputs']:
+        for node_id in history['outputs']:
+            node_output = history['outputs'][node_id]
+            if 'images' in node_output:
+                images_output = []
+                for image in node_output['images']:
+                    image_data = get_image(image['filename'], image['subfolder'], image['type'])
+                    images_output.append(image_data)
+            output_images[node_id] = images_output
+
+    return output_images
+
+
+
+
+
+
+
+
+
+def call_ComfyUI(new_prompt):
     prompt_text = """
     {
         "3": {
@@ -78,21 +134,21 @@ def call_ComfyUI(prompt):
                 "sampler_name": "euler",
                 "scheduler": "normal",
                 "seed": 8596257,
-                "steps": 2
+                "steps": 30
             }
         },
         "4": {
             "class_type": "CheckpointLoaderSimple",
             "inputs": {
-                "ckpt_name": "stableDiffusionV15Bf16Fp16NoEma_v15EmaOnly.safetensors"
+                "ckpt_name": "dreamshaper_8.safetensors"
             }
         },
         "5": {
             "class_type": "EmptyLatentImage",
             "inputs": {
                 "batch_size": 1,
-                "height": 100,
-                "width": 100
+                "height": 768,
+                "width": 768
             }
         },
         "6": {
@@ -143,7 +199,9 @@ def call_ComfyUI(prompt):
 
     prompt = json.loads(prompt_text)
     #set the text prompt for our positive CLIPTextEncode
-    prompt["6"]["inputs"]["text"] = prompt
+    prompt["6"]["inputs"]["text"] = new_prompt
+
+    prompt["3"]["inputs"]["seed"] = random.randint(1000000, 9999999)
 
 
     ws = websocket.WebSocket()
@@ -152,17 +210,26 @@ def call_ComfyUI(prompt):
 
     #Commented out code to display the output images:
 
-    # for node_id in images:
-    #     for image_data in images[node_id]:
-    #         from PIL import Image
-    #         import io
-    #         image = Image.open(io.BytesIO(image_data))
-    #         image.show()
+    for node_id in images:
+        for image_data in images[node_id]:
+            base64_image = base64.b64encode(image_data).decode('utf-8')
+            socketio.emit('image_data', {'image': base64_image})
+            print("Image data sent")
+            # Now, send base64_image to your JavaScript code
 
 
 if __name__ == '__main__':
     # Use app.run() instead of socketio.run() when running in a Jupyter notebook
     socketio.run(app, debug=True, use_reloader=False)
     #app.run(debug=True)
+
+
+
+
+
+
+
+
+
 
 # %%

@@ -29,13 +29,15 @@ Before launching the program open LM studio, download a model you like, go to th
 
 Furthermore ComfyUI needs to be running in order for SpeechToImage to work. Please refer to comfyUI documentation listed in the Dependencies part of this documentation to get ComfyUI up and running.
 
-Once both dependencies are running, we can launch the application still with an activated venv via
-````python main.py````
+Once both dependencies are running, we can launch the application still with an activated venv via ````python main.py````.
 
-DO NOT click on the url that will show up in the terminal, instead open chrome and open the url ````localhost:5000````
+DO NOT click on the url that will show up in the terminal, instead open chrome and open the url ````localhost:5000````.
 
 Click the record button to start talking and wait for the image to be generated, 
 in the first text box you will see what the speech recognition understood you said 
 and in the second text box you will see the improved prompt the llm came up with. 
 If you want to see how long the generation is taking you can open the terminal that comfyUI is running
-and should find a progress bar. 
+and should find a progress bar.
+
+## Lessons learned
+TODO

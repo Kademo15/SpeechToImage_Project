@@ -5,6 +5,7 @@ This is a school project from a student of the Lycée des Arts et Métiers
 The chrome browser
 
 This project implements two already existing projects [ComfyUI](https://github.com/comfyanonymous/ComfyUI) and [LM studio](https://lmstudio.ai/). 
+
 Please refer to their specific documentation to correctly install these two first before installing SpeechToImage_Project.
 
 ### Prerequisites

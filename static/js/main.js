@@ -5,29 +5,33 @@ var transcript;
 //recognition.interimResults = false;
 recognition.lang = 'en-US';
 
+// Starting the microphone when the button is clicked
 document.getElementById('start-microphone-button').addEventListener('click', function() {
     recognition.start();
 });
 
+// Displaying the transcript in the transcription textbox
 recognition.onresult = function(event) {
     transcript = event.results[event.results.length - 1][0].transcript;
     document.getElementById('transcription-textbox').value = transcript;
     
 };
 
+// Sending the transcript to the python script when the speech ends
 recognition.onspeechend = function () {
-    //action.innerHTML = "<small>stopped listening, hope you are done...</small>";
     socket.emit('/message', { 'text': transcript });
     recognition.stop();
 }
 
+// display the answer of the llm in the answer textbox
 socket.on('answer', function(data) {
     document.getElementById('answer-textbox').value = data.text;
     
 });
 
+
+// Displaying the image in the image container
 socket.on('image_data', function(data) {
-    // Get the div with id 'image-container'
     let imageContainer = document.getElementById('image-container');
 
     // Check if an image already exists
@@ -40,7 +44,7 @@ socket.on('image_data', function(data) {
     // Create a new image element
     let imgElement = document.createElement('img');
 
-    // Set the source of the image element to the Base64 image data
+    // Decode the base64 image and display it in the image element
     imgElement.src = 'data:image/png;base64,' + data.image;
 
     // Append the new image element to the div
